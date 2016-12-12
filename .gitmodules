@@ -1,0 +1,3 @@
+[submodule "server/neo4j"]
+	path = server/neo4j
+	url = https://github.com/neo4j/neo4j
