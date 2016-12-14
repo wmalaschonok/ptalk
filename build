@@ -1,0 +1,9 @@
+#!/bin/bash
+rm -rf bld
+mkdir bld
+cd server/neo4j/packaging/standalone/
+mvn clean package
+cd ../../../..
+cp server/neo4j/packaging/standalone/target/neo4j-community-3.1.1-SNAPSHOT-unix.tar.gz bld/
+cd bld
+tar -xvf neo4j-community-3.1.1-SNAPSHOT-unix.tar.gz
