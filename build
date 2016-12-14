@@ -1,9 +1,15 @@
 #!/bin/bash
 rm -rf bld
 mkdir bld
+
 cd server/neo4j/packaging/standalone/
-mvn clean package
-cd ../../../..
+	mvn clean package
+	cd ../../../..
+
 cp server/neo4j/packaging/standalone/target/neo4j-community-3.1.1-SNAPSHOT-unix.tar.gz bld/
 cd bld
 tar -xvf neo4j-community-3.1.1-SNAPSHOT-unix.tar.gz
+neo4j-community-3.1.1-SNAPSHOT/bin/neo4j start
+read -p "Please open http://localhost:7474 and change the default password. Then press a key."
+neo4j-community-3.1.1-SNAPSHOT/bin/neo4j stop
+cd ..
