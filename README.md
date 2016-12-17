@@ -8,7 +8,7 @@ End users have to create a private/public key pair to use the ptalk-system. The 
 # Building
 ## Dependencies
 Please make sure you have the following software installed and configured properly before proceding:
-* Maven
+* [Maven](https://maven.apache.org/)
 
 ## Building on GNU/Linux
 `./build`
