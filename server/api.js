@@ -2,32 +2,34 @@ const http = require('http');
 const request = require('request');
 
 const port = 4242;
+const allowedNames = /^[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789]+$/;
 
 const pwd = process.argv[2];
 
 const server = http.createServer((req, res) => {
-  res.setHeader('Content-Type', 'application/json');
+// res.setHeader('Content-Type', 'application/json');
 
   //parsing happens here
-  query = req.url;
-  if (query.startsWith("/REGISTER/")) { //register an account
-      query = query.replace(/\/REGISTER\//, "");
-
-      res.statusCode = 501;
-      console.log(query);
-      res.end("501 Not Implemented");
-  } else if (query.startsWith("/DELETE/")) { //delete an account
-      query = query.replace(/\/DELETE\//, "");
-
-      res.statusCode = 501;
-      console.log(query);
-      res.end("501 Not Implemented");
+  let path = req.url;
+  let action = req.method;
+  if (action == 'PUT') {
+      if (path.startsWith("/user/")) {
+          if (allowedNames.check(path.replace("/user/",""))) {
+              res.statusCode = 501;
+              res.end();
+          } else {
+              res.statusCode = 404;
+              res.end();
+          }
+      } else {
+          res.statusCode = 404;
+          res.end();
+      }
   } else {
-      res.statusCode = 400;
-      let msg = `Query ${query} could not be parsed.`;
-      console.log(msg);
-      res.end(msg);
+      res.statusCode = 404;
+      res.end();
   }
+  console.log(`${action}: ${path}`);
 });
 
 server.listen(port, () => {
