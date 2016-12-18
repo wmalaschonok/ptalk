@@ -6,23 +6,35 @@ const port = 4242;
 const pwd = process.argv[2];
 
 const server = http.createServer((req, res) => {
-  res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
 
   //parsing happens here
   query = req.url;
-  query = query.replace(/\//g,' ');
-  query = query.replace(/_a/g,'{');
-  query = query.replace(/_b/g,'}');
+  if (query.startsWith("/REGISTER/")) { //register an account
+      query = query.replace(/\/REGISTER\//, "");
 
-  cypher(query, res);
+      res.statusCode = 501;
+      console.log(query);
+      res.end("501 Not Implemented");
+  } else if (query.startsWith("/DELETE/")) { //delete an account
+      query = query.replace(/\/DELETE\//, "");
+
+      res.statusCode = 501;
+      console.log(query);
+      res.end("501 Not Implemented");
+  } else {
+      res.statusCode = 400;
+      let msg = `Query ${query} could not be parsed.`;
+      console.log(msg);
+      res.end(msg);
+  }
 });
 
 server.listen(port, () => {
   console.log(`Listening on port ${port}.`);
 });
 
-function cypher(query, res) {
+function cypher(query, callback) {
     console.log("Cypher: " + query);
     request({
     uri: "http://neo4j:"+pwd+"@localhost:7474/db/data/transaction/commit",
@@ -42,7 +54,6 @@ function cypher(query, res) {
             "statement" : query
         } ]
     }
-    }, function(error, request, body) {
-        res.end(JSON.stringify(body));
-    });
+    }, callback //(error, request, body)
+    );
 }
