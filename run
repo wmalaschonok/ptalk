@@ -5,8 +5,8 @@ neo4j-community-3.1.1-SNAPSHOT/bin/neo4j stop
 neo4j-community-3.1.1-SNAPSHOT/bin/neo4j start
 
 read -p "Please tell me the password for neo4j, kindly:" pwd
-echo ^C to stop.
-node api.js $pwd
+node api.js $pwd &
+read -p "<Enter> to stop."
 
 neo4j-community-3.1.1-SNAPSHOT/bin/neo4j stop
 
