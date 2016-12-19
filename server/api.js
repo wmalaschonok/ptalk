@@ -2,7 +2,7 @@ const http = require('http');
 const request = require('request');
 
 const port = 4242;
-const allowedNames = /^[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789]+$/;
+const allowedNames = /^[A-Za-z][A-Za-z0-9]*$/;
 
 const pwd = process.argv[2];
 
@@ -19,21 +19,29 @@ const server = http.createServer((req, res) => {
           if (allowedNames.test(name)) {
               cypher(`MATCH (n:Person {name:"${name}"}) RETURN n`,
                   function(error, request, body) {
-                      res.statusCode = 501;
-                      res.setHeader('Content-Type', 'application/json');
-                      res.end(JSON.stringify(body.result));
+                      let nameTaken = body["results"][0]["data"].toString() != "";
+                      if (nameTaken) {
+                          res.statusCode = 409;
+                          res.setHeader('Content-Type', 'application/json');
+                          res.end(`{"error":"Name ${name} is already taken."}\n`);
+                          console.log(`refusing to register name ${name}`);
+                      } else {
+                          res.statusCode = 501;
+                          res.end();
+                      }
                   }
             );
           } else {
-              res.statusCode = 400;
-              res.end();
+              res.statusCode = 403;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(`{"error":"Name ${name} does not match the following regular expression: ${allowedNames}"}`);
           }
       } else {
-          res.statusCode = 404;
+          res.statusCode = 400;
           res.end();
       }
   } else {
-      res.statusCode = 404;
+      res.statusCode = 400;
       res.end();
   }
 });
