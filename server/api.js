@@ -7,18 +7,25 @@ const allowedNames = /^[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123
 const pwd = process.argv[2];
 
 const server = http.createServer((req, res) => {
-// res.setHeader('Content-Type', 'application/json');
-
-  //parsing happens here
   let path = req.url;
   let action = req.method;
+  console.log(`${action}: ${path}`);
+
+  //parsing happens here
   if (action == 'PUT') {
       if (path.startsWith("/user/")) {
-          if (allowedNames.check(path.replace("/user/",""))) {
-              res.statusCode = 501;
-              res.end();
+          // register a user
+          let name = path.replace("/user/","");
+          if (allowedNames.test(name)) {
+              cypher(`MATCH (n:Person {name:"${name}"}) RETURN n`,
+                  function(error, request, body) {
+                      res.statusCode = 501;
+                      res.setHeader('Content-Type', 'application/json');
+                      res.end(JSON.stringify(body.result));
+                  }
+            );
           } else {
-              res.statusCode = 404;
+              res.statusCode = 400;
               res.end();
           }
       } else {
@@ -29,7 +36,6 @@ const server = http.createServer((req, res) => {
       res.statusCode = 404;
       res.end();
   }
-  console.log(`${action}: ${path}`);
 });
 
 server.listen(port, () => {
