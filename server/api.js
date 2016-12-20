@@ -26,6 +26,7 @@ const server = http.createServer((req, res) => {
                           res.end(`{"error":"Name ${name} is already taken."}\n`);
                           console.log(`${name} is already taken.`);
                       } else {
+                          //TODO: Adding public key when registering.
                           cypher(`CREATE (n:Person {name:"${name}"})`,
                               function(error, request, body) {
                                   res.statusCode = 204;
@@ -40,6 +41,15 @@ const server = http.createServer((req, res) => {
               res.setHeader('Content-Type', 'application/json');
               res.end(`{"error":"Name ${name} does not match the following regular expression: ${allowedNames}"}`);
           }
+      } else {
+          res.statusCode = 400;
+          res.end();
+      }
+  } else if (action == "GET") {
+      if (path.startsWith("/user/")) {
+          // get user data
+          res.statusCode = 501; //TODO
+          res.end();
       } else {
           res.statusCode = 400;
           res.end();
