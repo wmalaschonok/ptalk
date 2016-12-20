@@ -24,10 +24,14 @@ const server = http.createServer((req, res) => {
                           res.statusCode = 409;
                           res.setHeader('Content-Type', 'application/json');
                           res.end(`{"error":"Name ${name} is already taken."}\n`);
-                          console.log(`refusing to register name ${name}`);
+                          console.log(`${name} is already taken.`);
                       } else {
-                          res.statusCode = 501;
-                          res.end();
+                          cypher(`CREATE (n:Person {name:"${name}"})`,
+                              function(error, request, body) {
+                                  res.statusCode = 204;
+                                  res.end();
+                              }
+                        );
                       }
                   }
             );
