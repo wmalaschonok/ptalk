@@ -1,8 +1,11 @@
 const http = require('http');
+const openpgp = require('openpgp');
 const request = require('request');
 
 const port = 4242;
 const allowedNames = /^[A-Za-z][A-Za-z0-9]*$/;
+const allowedKeys = /^0x[A-Fa-f0-9]+$/;
+const keyserver = "https://pgp.mit.edu";
 
 const pwd = process.argv[2];
 
@@ -26,13 +29,44 @@ const server = http.createServer((req, res) => {
                           res.end(`{"error":"Name ${name} is already taken."}\n`);
                           console.log(`${name} is already taken.`);
                       } else {
-                          //TODO: Adding public key when registering.
-                          cypher(`CREATE (n:Person {name:"${name}"})`,
-                              function(error, request, body) {
-                                  res.statusCode = 204;
-                                  res.end();
+                          //TODO: Acquire keys directly, without using a keyserver.
+                          let fingerprint;
+                          try {
+                              fingerprint = JSON.parse(req.read())["fingerprint"];
+                          } catch (ex) {
+                              res.statusCode = 403;
+                              res.setHeader('Content-Type', 'application/json');
+                              res.end('{"error":"The request body has to be valid JSON."}');
+                              return;
+                          }
+                          if (fingerprint === undefined) {
+                              res.statusCode = 403;
+                              res.setHeader('Content-Type', 'application/json');
+                              res.end('{"error":"The request body has to contain a \'fingerprint\' attribute"}');
+                          } else {
+                              if (allowedKeys.test(fingerprint)) {
+                                  new openpgp.HKP(keyserver).lookup({query:fingerprint}).then(
+                                      function(key) {
+                                          if (key === undefined) {
+                                              res.statusCode = 404;
+                                              res.setHeader('Content-Type', 'application/json');
+                                              res.end(`{"error":"A key with the fingerprint ${fingerprint} was not found."}`);
+                                          } else {
+                                              cypher(`CREATE (p:Person {name:"${name}"})-[o:OWNS]->(k:Key {fingerprint:"${fingerprint}", key:"${key}"})`,
+                                                  function(error, request, body) {
+                                                      res.statusCode = 204;
+                                                      res.end();
+                                                  }
+                                            );
+                                          }
+                                      }
+                                );
+                              } else {
+                                  res.statusCode = 403;
+                                  res.setHeader('Content-Type', 'application/json');
+                                  res.end(`{"error":"Fingerprint ${fingerprint} does not match the following regular expression: ${allowedKeys}"}`);
                               }
-                        );
+                          }
                       }
                   }
             );

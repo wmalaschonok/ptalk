@@ -12,6 +12,7 @@ cp server/api.js bld/api.js
 
 cd bld
 	npm install request
+	npm install openpgp
 
 	tar -xvf neo4j-community-3.1.1-SNAPSHOT-unix.tar.gz
 #	rm -rf neo4j-community-3.1.1-SNAPSHOT/data/databases/graph.db
