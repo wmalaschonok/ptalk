@@ -1,5 +1,14 @@
 #!/bin/bash
-bld/neo4j-community-3.1.1-SNAPSHOT/bin/neo4j stop
-bld/neo4j-community-3.1.1-SNAPSHOT/bin/neo4j start
-read -p "Press return key to stop."
-bld/neo4j-community-3.1.1-SNAPSHOT/bin/neo4j stop
+cd bld
+
+neo4j-community-3.1.1-SNAPSHOT/bin/neo4j stop
+neo4j-community-3.1.1-SNAPSHOT/bin/neo4j start
+
+read -p "Please tell me the password for neo4j, kindly:" pwd
+node api.js $pwd &
+nodePid=$!
+read -p "<Enter> to stop."
+
+neo4j-community-3.1.1-SNAPSHOT/bin/neo4j stop
+kill $nodePid
+cd ..
