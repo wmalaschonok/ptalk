@@ -4,7 +4,8 @@ const request = require('request');
 
 const port = 4242;
 const allowedNames = /^[A-Za-z][A-Za-z0-9]*$/;
-const allowedKeys = /^0x[A-Fa-f0-9]+$/;
+const allowedFingerprints = /^[A-Fa-f0-9]+$/;
+const allowedKeys = /^[^"']+$/;
 const keyserver = "https://pgp.mit.edu";
 
 const pwd = process.argv[2];
@@ -29,28 +30,30 @@ const server = http.createServer((req, res) => {
                           res.end(`{"error":"Name ${name} is already taken."}\n`);
                           console.log(`${name} is already taken.`);
                       } else {
-                          //TODO: Acquire keys directly, without using a keyserver.
                           let fingerprint;
+                          let key;
                           try {
-                              fingerprint = JSON.parse(req.read())["fingerprint"];
+                              let json = JSON.parse(req.read());
+                              fingerprint = json["fingerprint"];
+                              key = json["key"].replace(/{NEWLINE}/g,"\n");
                           } catch (ex) {
                               res.statusCode = 403;
                               res.setHeader('Content-Type', 'application/json');
                               res.end('{"error":"The request body has to be valid JSON."}');
                               return;
                           }
-                          if (fingerprint === undefined) {
+                          if (fingerprint === undefined && key === undefined) {
                               res.statusCode = 403;
                               res.setHeader('Content-Type', 'application/json');
-                              res.end('{"error":"The request body has to contain a \'fingerprint\' attribute"}');
+                              res.end('{"error":"The request body has to contain a \'fingerprint\' or a \'key\' attribute."}');
                           } else {
-                              if (allowedKeys.test(fingerprint)) {
-                                  new openpgp.HKP(keyserver).lookup({query:fingerprint}).then(
+                              if (allowedFingerprints.test(fingerprint)) {
+                                  new openpgp.HKP(keyserver).lookup({query:`0x${fingerprint}`}).then(
                                       function(key) {
                                           if (key === undefined) {
                                               res.statusCode = 404;
                                               res.setHeader('Content-Type', 'application/json');
-                                              res.end(`{"error":"A key with the fingerprint ${fingerprint} was not found."}`);
+                                              res.end(`{"error":"A key with the fingerprint ${fingerprint} was not found on keyserver ${keyserver}."}`);
                                           } else {
                                               cypher(`CREATE (p:Person {name:"${name}"})-[o:OWNS]->(k:Key {fingerprint:"${fingerprint}", key:"${key}"})`,
                                                   function(error, request, body) {
@@ -61,10 +64,24 @@ const server = http.createServer((req, res) => {
                                           }
                                       }
                                 );
+                              } else if (allowedKeys.test(key)) {
+                                  let keyObject = openpgp.key.readArmored(key).keys;
+                                  if (keyObject.toString() == "") {
+                                      res.statusCode = 403;
+                                      res.setHeader('Content-Type', 'application/json');
+                                      res.end(`{"error":"${key} is not a valid PGP key."}`);
+                                  } else {
+                                      cypher(`CREATE (p:Person {name:"${name}"})-[o:OWNS]->(k:Key {fingerprint: "${keyObject[0].primaryKey.fingerprint}",key: "${key}"})`,
+                                          function(error, request, body) {
+                                              res.statusCode = 204;
+                                              res.end();
+                                          }
+                                    );
+                                  }
                               } else {
                                   res.statusCode = 403;
                                   res.setHeader('Content-Type', 'application/json');
-                                  res.end(`{"error":"Fingerprint ${fingerprint} does not match the following regular expression: ${allowedKeys}"}`);
+                                  res.end(`{"error":"Fingerprint ${fingerprint} does not match regular expression ${allowedFingerprints} and key ${key} does not match regular expression ${allowedKeys}."}`);
                               }
                           }
                       }
@@ -81,8 +98,8 @@ const server = http.createServer((req, res) => {
       }
   } else if (action == "GET") {
       if (path.startsWith("/user/")) {
-          // get user data
-          res.statusCode = 501; //TODO
+          //TODO: get user data
+          res.statusCode = 501;
           res.end();
       } else {
           res.statusCode = 400;
