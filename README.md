@@ -15,10 +15,12 @@ Please make sure you have the following software installed and configured proper
 `./build`
 
 ## Building on Windows
+You'll need administrative privileges.
 `build.bat`
 
 ## Running on GNU/Linux
 `./run`
 
 ## Running on Windows
+You'll need administrative privileges.
 `run.bat`
